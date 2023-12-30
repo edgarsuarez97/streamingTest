@@ -6,18 +6,22 @@ const fs = require("fs");
 const path = require('path');
 
 var app = express();
+app.use(express.static(__dirname + '/public'));
 
 app.use(express.urlencoded({extended: true}));
 
 app.get('/', function(req, res) {
-    res.sendFile(path.join(__dirname + '/index.html'))
+    res.sendFile(path.join(__dirname + '/upload.html'))
+});
+
+app.get('/video', function(req, res) {
+    res.sendFile(path.join(__dirname + '/video.html'))
 });
 
 app.post('/upload',
     fileUpload({ createParentPath:true }), 
     (req, res) => {
         const files = req.files
-        console.log(files)
         const child = fork("./video_compression/video");
 
         Object.keys(files).forEach(key =>{
@@ -30,7 +34,7 @@ app.post('/upload',
             child.send({filePath: filepath, name: files[key].name});
             child.on("message", (message) => {
                 const { statusCode, text } = message;
-                res.status(statusCode).send(text);
+                res.status(statusCode).json({status: 'Success', message: text});
             });
         })
         
